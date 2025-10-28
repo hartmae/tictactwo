@@ -6,11 +6,14 @@ import java.awt.event.ActionListener;
 public class TicTacToeFrame extends JFrame {
     private static final int ROW = 3;
     private static final int COL = 3;
-    private String[][] board = new String[ROW][COL];
+    private Board board;
     private TicTacToeButton[][] buttons = new TicTacToeButton[ROW][COL];
 
-    private String currentPlayer = "X";
-    private int moveCount = 0;
+    private Player playerX;
+    private Player playerO;
+    private Player currentPlayer;
+    private Score score;
+    private Result result;
 
     private JPanel boardPanel;
     private JPanel controlPanel;
@@ -21,6 +24,13 @@ public class TicTacToeFrame extends JFrame {
         setSize(600, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        board = new Board();
+        playerX = new Player("X");
+        playerO = new Player("O");
+        currentPlayer = playerX;
+        score = new Score();
+        result = new Result();
 
         createBoardPanel();
         createControlPanel();
@@ -67,58 +77,29 @@ public class TicTacToeFrame extends JFrame {
     }
 
     private void clearBoard() {
+        board.clear();
         for (int row = 0; row < ROW; row++) {
             for (int col = 0; col < COL; col++) {
-                board[row][col] = "";
                 buttons[row][col].setText("");
                 buttons[row][col].setEnabled(true);
             }
         }
-        currentPlayer = "X";
-        moveCount = 0;
+        currentPlayer = playerX;
+        score.reset();
+        result.reset();
     }
 
 
     private boolean isValidMove(int row, int col) {
-        return board[row][col].equals("");
-    }
-
-    private boolean rowWin(String player) {
-        for (int row = 0; row < ROW; row++) {
-            if (board[row][0].equals(player) &&
-                board[row][1].equals(player) &&
-                board[row][2].equals(player)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean colWin(String player) {
-        for (int col = 0; col < COL; col++) {
-            if (board[0][col].equals(player) &&
-                board[1][col].equals(player) &&
-                board[2][col].equals(player)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean diagonalWin(String player) {
-        if ((board[0][0].equals(player) && board[1][1].equals(player) && board[2][2].equals(player)) ||
-            (board[0][2].equals(player) && board[1][1].equals(player) && board[2][0].equals(player))) {
-            return true;
-        }
-        return false;
+        return board.isValidMove(row, col);
     }
 
     private boolean isWin(String player) {
-        return colWin(player) || rowWin(player) || diagonalWin(player);
+        return board.isWin(player);
     }
 
     private boolean isTie() {
-        return moveCount >= 9;
+        return score.isTie();
     }
 
     private void disableAllButtons() {
@@ -161,26 +142,27 @@ public class TicTacToeFrame extends JFrame {
                 return;
             }
 
-            board[row][col] = currentPlayer;
-            button.setText(currentPlayer);
-            moveCount++;
+            board.setMove(row, col, currentPlayer.getSymbol());
+            button.setText(currentPlayer.getSymbol());
+            score.incrementMoves();
 
-            if (moveCount >= 5) {
-                if (isWin(currentPlayer)) {
+            if (score.getMoveCount() >= 5) {
+                if (isWin(currentPlayer.getSymbol())) {
                     disableAllButtons();
-                    String playerName = currentPlayer.equals("X") ? "Player X" : "Player O";
-                    promptPlayAgain(playerName + " wins!");
+                    result.setWin(currentPlayer);
+                    promptPlayAgain(result.getMessage());
                     return;
                 }
             }
 
             if (isTie()) {
                 disableAllButtons();
-                promptPlayAgain("It's a tie!");
+                result.setTie();
+                promptPlayAgain(result.getMessage());
                 return;
             }
 
-            currentPlayer = currentPlayer.equals("X") ? "O" : "X";
+            currentPlayer = currentPlayer.getSymbol().equals("X") ? playerO : playerX;
         }
     }
 }
